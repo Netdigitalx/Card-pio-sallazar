@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Faça seu Pedido</title>
+    <style>
+        :root {
+            --cor-primaria: #ff6600;
+            --cor-fundo: #f4f4f8;
+            --cor-texto: #333;
+        }
+        
+        /* Animação de abertura */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeOut 0.5s ease-out 3s forwards;
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+        
+        #splash-logo {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            display: flex;
+            height: 100vh;
+        }
+        
+        #store-header {
+            display: none; /* Escondemos o header original */
+        }
+        
+        /* Comanda - Lado Esquerdo */
+        #comanda-container {
+            width: 40%;
+            background-color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        #comanda-header {
+            background-color: var(--cor-primaria);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        #comanda-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            list-style: none;
+            margin: 0;
+        }
+        
+        .comanda-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .comanda-item-info {
+            flex-grow: 1;
+        }
+        
+        .comanda-item-info span {
+            display: block;
+            font-size: 0.8em;
+            color: #777;
+        }
+        
+        .remove-item {
+            background: none;
+            border: none;
+            color: #ff4444;
+            font-size: 1em;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        #comanda-footer {
+            padding: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        #total-section {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .total-label {
+            font-size: 0.9em;
+        }
+        
+        .total-value {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        #total-price {
+            font-weight: bold;
+            color: var(--cor-primaria);
+            font-size: 1.1em;
+        }
+        
+        #taxa-entrega {
+            display: none;
+            color: #777;
+        }
+        
+        #confirmar-pedido-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--cor-primaria);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        
+        /* Produtos - Lado Direito */
+        #products-container {
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        #category-menu {
+            background-color: white;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid #f0f0f0;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        #category-menu::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .category-button {
+            background-color: #eee;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        
+        .category-button.active {
+            background-color: var(--cor-primaria);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        #product-carousel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .product-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            text-align: center;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .product-card img {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+            background-color: #eee;
+        }
+        
+        .product-card h3 {
+            font-size: 0.95em;
+            margin: 8px 0 4px 0;
+            flex-grow: 1;
+        }
+        
+        .product-card .price {
+            font-weight: bold;
+            color: var(--cor-primaria);
+            margin: 8px 0;
+        }
+        
+        .add-button {
+            background-color: var(--cor-primaria);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 0.9em;
+        }
+        
+        /* Modal de checkout */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background-color: white;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: var(--cor-primaria);
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #777;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        
+        .delivery-options {
+            display: flex;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        
+        .delivery-option {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .delivery-option input {
+            display: none;
+        }
+        
+        .delivery-option label {
+            display: block;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .delivery-option input:checked + label {
+            background-color: var(--cor-primaria);
+            color: white;
+            border-color: var(--cor-primaria);
+        }
+        
+        #endereco-group {
+            display: block;
+        }
+        
+        #enviar-pedido-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #25D366;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        #comanda-placeholder {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de abertura -->
+    <div id="splash-screen">
+        <img id="splash-logo" src="https://i.supaimg.com/a18242a1-44b3-47d6-9b08-619da867cb97.png" alt="Logomarca">
+    </div>
+
+    <!-- Comanda - Lado Esquerdo -->
+    <div id="comanda-container">
+        <div id="comanda-header">
+            <h2>Seu Pedido</h2>
+        </div>
+        <ul id="comanda-items">
+            <p id="comanda-placeholder">Adicione itens ao seu pedido</p>
+        </ul>
+        <div id="comanda-footer">
+            <div id="total-section">
+                <div id="taxa-entrega" class="total-line">
+                    <span class="total-label">Taxa de Entrega:</span>
+                    <span class="total-value">R$ 3,00</span>
+                </div>
+                <div class="total-line">
+                    <span class="total-label">Total:</span>
+                    <span id="total-price">R$ 0,00</span>
+                </div>
+            </div>
+            <button id="confirmar-pedido-btn" disabled>Confirmar Pedido</button>
+        </div>
+    </div>
+    
+    <!-- Produtos - Lado Direito -->
+    <div id="products-container">
+        <header id="category-menu"></header>
+        <main id="product-carousel"></main>
+    </div>
+    
+    <!-- Modal de checkout -->
+    <div id="checkout-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Finalizar Pedido</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="nome-cliente">Seu Nome</label>
+                <input type="text" id="nome-cliente" placeholder="Digite seu nome">
+            </div>
+            
+            <div class="form-group">
+                <label for="telefone-cliente">Telefone</label>
+                <input type="tel" id="telefone-cliente" placeholder="(21) 99999-9999">
+            </div>
+            
+            <div class="delivery-options">
+                <div class="delivery-option">
+                    <input type="radio" id="modal-entrega" name="modal-tipo-entrega" value="delivery" checked>
+                    <label for="modal-entrega">🛵 Delivery (+R$ 3,00)</label>
+                </div>
+                <div class="delivery-option">
+                    <input type="radio" id="modal-retirada" name="modal-tipo-entrega" value="pickup">
+                    <label for="modal-retirada">🛍️ Retirar</label>
+                </div>
+            </div>
+            
+            <div id="endereco-group" class="form-group">
+                <label for="endereco-cliente">Endereço Completo</label>
+                <input type="text" id="endereco-cliente" placeholder="Rua, número, bairro, complemento">
+            </div>
+            
+            <div class="form-group">
+                <label for="pagamento-metodo">Forma de Pagamento</label>
+                <select id="pagamento-metodo">
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                </select>
+            </div>
+            
+            <button id="enviar-pedido-btn">
+                <span id="enviar-text">Enviar Pedido por WhatsApp</span>
+                <span id="enviar-loading" class="loading" style="display: none;"></span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const numeroWhatsApp = '5521983779578';
+        const urlPlanilha = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYxHWa4lHk3GO5IwnmE0CxPP3WlYttTV8EIWIIyea9L_ZIu7vmYAyDBkpZDl1PD36_e6kHbOR0guk1/pub?output=csv';
+        const TAXA_ENTREGA = 3.00;
+
+        let menuItems = [];
+        let carrinho = [];
+        let categoriaAtiva = null;
+        let isDelivery = true;
+
+        const elements = {
+            categoryMenu: document.getElementById('category-menu'),
+            productCarousel: document.getElementById('product-carousel'),
+            comandaItems: document.getElementById('comanda-items'),
+            comandaPlaceholder: document.getElementById('comanda-placeholder'),
+            totalPrice: document.getElementById('total-price'),
+            confirmarPedidoBtn: document.getElementById('confirmar-pedido-btn'),
+            checkoutModal: document.getElementById('checkout-modal'),
+            closeModalBtn: document.querySelector('.close-modal'),
+            modalEntrega: document.getElementById('modal-entrega'),
+            modalRetirada: document.getElementById('modal-retirada'),
+            enderecoGroup: document.getElementById('endereco-group'),
+            enviarPedidoBtn: document.getElementById('enviar-pedido-btn'),
+            enviarText: document.getElementById('enviar-text'),
+            enviarLoading: document.getElementById('enviar-loading'),
+            nomeCliente: document.getElementById('nome-cliente'),
+            telefoneCliente: document.getElementById('telefone-cliente'),
+            enderecoCliente: document.getElementById('endereco-cliente'),
+            pagamentoMetodo: document.getElementById('pagamento-metodo'),
+            taxaEntrega: document.getElementById('taxa-entrega')
+        };
+
+        function parseCSV(text) {
+            const linhas = text.trim().split(/\r?\n/).filter(linha => linha.trim() !== '');
+            if (linhas.length < 2) return [];
+            
+            const cabecalhos = linhas[0].split(',').map(h => h.trim().toLowerCase());
+            return linhas.slice(1).map(linha => {
+                const celulas = linha.split(',');
+                let obj = {};
+                
+                cabecalhos.forEach((cabecalho, i) => {
+                    let chaveLimpa = cabecalho.replace(/"/g, '');
+                    if (chaveLimpa === 'preço') chaveLimpa = 'preco';
+                    
+                    const valor = (celulas[i] || '').trim().replace(/"/g, '');
+                    
+                    if (chaveLimpa === 'preco') {
+                        const precoLimpo = valor.replace(/R\$\s*/, '').replace(',', '.').trim();
+                        obj[chaveLimpa] = parseFloat(precoLimpo) || 0;
+                    } else if (chaveLimpa === 'id') {
+                        obj[chaveLimpa] = parseInt(valor, 10) || 0;
+                    } else {
+                        obj[chaveLimpa] = valor;
+                    }
+                });
+                
+                return obj;
+            });
+        }
+
+        function renderizarCategorias() {
+            const categorias = [...new Set(menuItems.map(item => item.categoria))].filter(Boolean);
+            if (categorias.length === 0) return;
+            
+            if (!categoriaAtiva) categoriaAtiva = categorias[0];
+            
+            elements.categoryMenu.innerHTML = '';
+            
+            if (categorias.length > 1) {
+                categorias.unshift('Todos');
+            }
+            
+            categorias.forEach(categoria => {
+                const btn = document.createElement('button');
+                btn.className = 'category-button';
+                btn.innerText = categoria;
+                
+                if (categoria === categoriaAtiva) {
+                    btn.classList.add('active');
+                }
+                
+                btn.onclick = () => {
+                    categoriaAtiva = categoria;
+                    renderizarProdutos();
+                    document.querySelector('.category-button.active')?.classList.remove('active');
+                    btn.classList.add('active');
+                };
+                
+                elements.categoryMenu.appendChild(btn);
+            });
+        }
+
+        function renderizarProdutos() {
+            elements.productCarousel.innerHTML = '';
+            const produtosFiltrados = categoriaAtiva === 'Todos' ? menuItems : menuItems.filter(item => item.categoria === categoriaAtiva);
+            
+            produtosFiltrados.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${item.imagem}" alt="${item.nome}" loading="lazy">
+                    <h3>${item.nome}</h3>
+                    <p class="price">${(item.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    <button class="add-button" onclick="adicionarAoCarrinho(${item.id})">Adicionar</button>
+                `;
+                elements.productCarousel.appendChild(card);
+            });
+        }
+
+        function renderizarComanda() {
+            elements.comandaItems.innerHTML = '';
+            
+            if (carrinho.length === 0) {
+                elements.comandaPlaceholder.style.display = 'block';
+                elements.confirmarPedidoBtn.disabled = true;
+                elements.taxaEntrega.style.display = 'none';
+                return;
+            }
+            
+            elements.comandaPlaceholder.style.display = 'none';
+            elements.confirmarPedidoBtn.disabled = false;
+            elements.taxaEntrega.style.display = isDelivery ? 'flex' : 'none';
+            
+            carrinho.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'comanda-item';
+                li.innerHTML = `
+                    <div class="comanda-item-info">
+                        ${item.nome}
+                        <span>${item.quantidade}x ${(item.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                    <button class="remove-item" onclick="removerItem(${item.id})">✕</button>
+                `;
+                elements.comandaItems.appendChild(li);
+            });
+            
+            atualizarTotal();
+        }
+
+        function calcularTotal() {
+            const subtotal = carrinho.reduce((acc, item) => acc + ((item.preco || 0) * item.quantidade), 0);
+            const total = isDelivery ? subtotal + TAXA_ENTREGA : subtotal;
+            return { subtotal, total };
+        }
+
+        function atualizarTotal() {
+            const { subtotal, total } = calcularTotal();
+            elements.totalPrice.innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function adicionarAoCarrinho(itemId) {
+            const itemExistente = carrinho.find(item => item.id === itemId);
+            
+            if (itemExistente) {
+                itemExistente.quantidade++;
+            } else {
+                const itemParaAdicionar = menuItems.find(item => item.id === itemId);
+                if (itemParaAdicionar) {
+                    carrinho.push({ ...itemParaAdicionar, quantidade: 1 });
+                }
+            }
+            
+            renderizarComanda();
+        }
+
+        function removerItem(itemId) {
+            carrinho = carrinho.filter(item => item.id !== itemId);
+            renderizarComanda();
+        }
+
+        function toggleModal() {
+            elements.checkoutModal.classList.toggle('active');
+            document.body.style.overflow = elements.checkoutModal.classList.contains('active') ? 'hidden' : 'auto';
+        }
+
+        function toggleEnderecoField() {
+            isDelivery = elements.modalEntrega.checked;
+            elements.enderecoGroup.style.display = isDelivery ? 'block' : 'none';
+            renderizarComanda();
+        }
+
+        function enviarPedidoWhatsApp() {
+            const nome = elements.nomeCliente.value.trim();
+            const telefone = elements.telefoneCliente.value.trim();
+            const endereco = elements.enderecoCliente.value.trim();
+            const pagamento = elements.pagamentoMetodo.value;
+            
+            if (!nome) {
+                alert('Por favor, digite seu nome');
+                return;
+            }
+            
+            if (isDelivery && !endereco) {
+                alert('Por favor, digite seu endereço para entrega');
+                return;
+            }
+            
+            elements.enviarText.style.display = 'none';
+            elements.enviarLoading.style.display = 'inline-block';
+            
+            const dataPedido = new Date();
+            const saudacao = dataPedido.getHours() < 12 ? "Bom dia" : 
+                           dataPedido.getHours() < 18 ? "Boa tarde" : "Boa noite";
+            
+            const { subtotal, total } = calcularTotal();
+            
+            let mensagem = `*NOVO PEDIDO* - ${saudacao}!\n\n`;
+            mensagem += `*Cliente:* ${nome}\n`;
+            mensagem += `*Telefone:* ${telefone || 'Não informado'}\n\n`;
+            mensagem += `*Pedido:*\n----------------------------------\n`;
+            
+            carrinho.forEach(item => {
+                mensagem += `*${item.quantidade}x* ${item.nome} - ${(item.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+            });
+            
+            mensagem += `\n*Subtotal:* ${subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+            
+            if (isDelivery) {
+                mensagem += `*Taxa de Entrega:* ${TAXA_ENTREGA.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+            }
+            
+            mensagem += `*Total:* ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n`;
+            mensagem += `*Forma de Pagamento:* ${pagamento}\n`;
+            mensagem += `*Tipo de Entrega:* ${isDelivery ? 'Delivery' : 'Retirada'}\n`;
+            
+            if (isDelivery) {
+                mensagem += `*Endereço:* ${endereco}\n`;
+            }
+            
+            mensagem += `\n----------------------------------\n`;
+            mensagem += `*Observações:* \n`;
+            
+            setTimeout(() => {
+                const linkWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
+                window.open(linkWhatsApp, '_blank');
+                
+                elements.enviarText.style.display = 'inline';
+                elements.enviarLoading.style.display = 'none';
+                
+                toggleModal();
+                carrinho = [];
+                renderizarComanda();
+                
+                elements.nomeCliente.value = '';
+                elements.telefoneCliente.value = '';
+                elements.enderecoCliente.value = '';
+            }, 1000);
+        }
+
+        elements.confirmarPedidoBtn.addEventListener('click', toggleModal);
+        elements.closeModalBtn.addEventListener('click', toggleModal);
+        elements.modalEntrega.addEventListener('change', toggleEnderecoField);
+        elements.modalRetirada.addEventListener('change', toggleEnderecoField);
+        elements.enviarPedidoBtn.addEventListener('click', enviarPedidoWhatsApp);
+
+        async function iniciarAplicacao() {
+            try {
+                const response = await fetch(urlPlanilha);
+                if (!response.ok) throw new Error(`Erro de rede.`);
+                
+                const csvText = await response.text();
+                if (!csvText) throw new Error(`Planilha veio em branco.`);
+                
+                menuItems = parseCSV(csvText);
+                
+                if (menuItems.length > 0) {
+                    renderizarCategorias();
+                    renderizarProdutos();
+                } else {
+                    elements.productCarousel.innerHTML = '<p style="text-align:center; width: 100%;">Nenhum produto encontrado na planilha.</p>';
+                }
+            } catch (error) {
+                console.error("Erro Crítico:", error);
+                elements.productCarousel.innerHTML = `<p style="text-align:center; width: 100%;"><b>Erro ao carregar o cardápio.</b><br><small>${error.message}</small></p>`;
+            } finally {
+                renderizarComanda();
+                toggleEnderecoField();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                iniciarAplicacao();
+            }, 3000);
+        });
+
+        window.removerItem = removerItem;
+        window.adicionarAoCarrinho = adicionarAoCarrinho;
+    </script>
+</body>
+</html>
